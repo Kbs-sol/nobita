@@ -59,22 +59,13 @@ npm run build
 print_step "Setting up Cloudflare D1 database..."
 
 # Create D1 database if it doesn't exist
-DB_OUTPUT=$(wrangler d1 create doraemon-production 2>&1 || true)
-if echo "$DB_OUTPUT" | grep -q "already exists"; then
-    print_warning "Database 'doraemon-production' already exists"
-else
-    print_success "Database 'doraemon-production' created"
-    echo "$DB_OUTPUT"
-    print_warning "Please update wrangler.jsonc with the database_id from the output above"
-fi
-
-print_step "Applying database migrations..."
-wrangler d1 migrations apply doraemon-production --local
-print_success "Local database migrations applied"
-
-print_step "Seeding database with sample data..."
-if [ -f "seed.sql" ]; then
-    wrangler d1 execute doraemon-production --local --file=./seed.sql
+DB_OUTPUT=$(wrangler d1 create DORAEMON_DB 2>&1 || true)
+...
+wrangler d1 migrations apply DORAEMON_DB --local
+...
+wrangler d1 execute DORAEMON_DB --local --file=./seed.sql
+...
+wrangler d1 migrations apply DORAEMON_DB --local --file=./seed.sql
     print_success "Database seeded with sample data"
 fi
 
