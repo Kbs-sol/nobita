@@ -30,40 +30,56 @@ app.use('/api/*', cors({
 // Serve static files
 app.use('/static/*', serveStatic({ root: './public' }));
 
-// Rate limiting middleware
+// Rate limiting middleware (simplified for local development)
 app.use('/api/*', async (c, next) => {
   const ip = getClientIP(c.req.raw);
-  const rateLimit = await checkRateLimit(
-    c.env.KV,
-    ip,
-    parseInt(c.env.RATE_LIMIT_REQUESTS),
-    parseInt(c.env.RATE_LIMIT_WINDOW) * 1000
-  );
+  
+  // Skip rate limiting if KV is not available (local development)
+  if (c.env.KV) {
+    const rateLimit = await checkRateLimit(
+      c.env.KV,
+      ip,
+      parseInt(c.env.RATE_LIMIT_REQUESTS || '100'),
+      parseInt(c.env.RATE_LIMIT_WINDOW || '3600') * 1000
+    );
 
-  if (!rateLimit.allowed) {
-    return c.json({ error: 'Rate limit exceeded' }, 429);
+    if (!rateLimit.allowed) {
+      return c.json({ error: 'Rate limit exceeded' }, 429);
+    }
+
+    c.header('X-RateLimit-Remaining', rateLimit.remaining.toString());
   }
-
-  c.header('X-RateLimit-Remaining', rateLimit.remaining.toString());
+  
   await next();
 });
 
-// Session middleware
+// Session middleware (simplified for local development)
 app.use('/api/*', async (c, next) => {
   const sessionId = c.req.header('X-Session-ID') || generateSessionId();
-  const db = new DatabaseService(c.env.DB);
   
-  let session = await db.getSessionById(sessionId);
-  if (!session) {
-    session = await db.createSession({
+  // Skip database session if DB is not available (local development)
+  if (c.env.DB) {
+    const db = new DatabaseService(c.env.DB);
+    
+    let session = await db.getSessionById(sessionId);
+    if (!session) {
+      session = await db.createSession({
+        session_id: sessionId,
+        ip_address: getClientIP(c.req.raw),
+        user_agent: getUserAgent(c.req.raw),
+        expires_at: new Date(Date.now() + parseInt(c.env.SESSION_EXPIRE_HOURS || '24') * 60 * 60 * 1000).toISOString()
+      });
+    }
+    c.set('session', session);
+  } else {
+    // Create a mock session for local development
+    c.set('session', {
       session_id: sessionId,
-      ip_address: getClientIP(c.req.raw),
-      user_agent: getUserAgent(c.req.raw),
-      expires_at: new Date(Date.now() + parseInt(c.env.SESSION_EXPIRE_HOURS) * 60 * 60 * 1000).toISOString()
+      ads_watched: 0,
+      movies_unlocked: '[]'
     });
   }
 
-  c.set('session', session);
   c.header('X-Session-ID', sessionId);
   await next();
 });
@@ -90,33 +106,65 @@ app.use('/api/admin/*', async (c, next) => {
   await next();
 });
 
-// Analytics tracking middleware
+// Analytics tracking middleware (simplified for local development)
 app.use('*', async (c, next) => {
   await next();
   
-  // Track page views
-  const db = new DatabaseService(c.env.DB);
-  const session = c.get('session');
-  
-  if (session && c.res.status === 200) {
-    await db.recordAnalytic({
-      event_type: 'page_view',
-      session_id: session.session_id,
-      ip_address: getClientIP(c.req.raw),
-      user_agent: getUserAgent(c.req.raw),
-      referrer: c.req.header('Referer') || null,
-      additional_data: JSON.stringify({
-        path: new URL(c.req.url).pathname,
-        method: c.req.method
-      })
-    });
+  // Track page views only if DB is available
+  if (c.env.DB) {
+    const db = new DatabaseService(c.env.DB);
+    const session = c.get('session');
+    
+    if (session && c.res.status === 200) {
+      await db.recordAnalytic({
+        event_type: 'page_view',
+        session_id: session.session_id,
+        ip_address: getClientIP(c.req.raw),
+        user_agent: getUserAgent(c.req.raw),
+        referrer: c.req.header('Referer') || null,
+        additional_data: JSON.stringify({
+          path: new URL(c.req.url).pathname,
+          method: c.req.method
+        })
+      });
+    }
   }
 });
 
 // Homepage route
 app.get('/', async (c) => {
-  const db = new DatabaseService(c.env.DB);
-  const movies = await db.getAllMovies();
+  // Use sample data if DB is not available
+  let movies = [];
+  if (c.env.DB) {
+    const db = new DatabaseService(c.env.DB);
+    movies = await db.getAllMovies();
+  } else {
+    // Sample movies for local development without DB
+    movies = [
+      {
+        id: 1,
+        title: 'Stand by Me Doraemon',
+        year: 2014,
+        description: 'A heartwarming 3D animated film featuring Doraemon and Nobita.',
+        thumbnail_url: '/static/default-movie.jpg',
+        rating: 8.2,
+        duration_minutes: 95,
+        view_count: 1250,
+        download_count: 89
+      },
+      {
+        id: 2,
+        title: 'Doraemon: Nobita\'s Treasure Island',
+        year: 2018,
+        description: 'A swashbuckling adventure as Nobita and the gang search for treasure.',
+        thumbnail_url: '/static/default-movie.jpg',
+        rating: 8.0,
+        duration_minutes: 109,
+        view_count: 987,
+        download_count: 76
+      }
+    ];
+  }
   
   return c.html(`
     <!DOCTYPE html>
