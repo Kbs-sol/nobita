@@ -7,9 +7,8 @@
     "nodejs_compat"
   ],
   "d1_databases": [
-    {
-      "binding": "DORAEMON_DB",
-      "database_name": "doraemon-production"
-    }
-  ]
-}
+  {
+    "binding": "DORAEMON_DB",
+    "database_id": "${{ env.DORAEMON_DB_ID }}"
+  }
+]
