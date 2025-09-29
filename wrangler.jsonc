@@ -9,7 +9,7 @@
   "d1_databases": [
     {
       "binding": "DORAEMON_DB",
-      "database_name": "doraemon-production",   // <--- add this
+      "database_name": "doraemon-production",
       "database_id": "05e88bd6-de91-46ac-ba53-c76d31df0f8a"
     }
   ]
