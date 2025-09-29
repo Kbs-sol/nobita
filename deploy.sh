@@ -58,16 +58,26 @@ npm run build
 
 print_step "Setting up Cloudflare D1 database..."
 
-# Create D1 database if it doesn't exist 
-DB_OUTPUT=$(wrangler d1 create DORAEMON_DB 2>&1 || true) 
-if echo "$DB_OUTPUT" | grep -q "already exists"; then 
-print_warning "Database 'DORAEMON_DB' already exists" 
-else print_success "Database 'DORAEMON_DB' created" echo "$DB_OUTPUT" 
-print_warning "Please update wrangler.jsonc with the database_id from the output above" 
-fi print_step "Applying database migrations..." 
-wrangler d1 migrations apply DORAEMON_DB --local --file=./seed.sql
+# Create D1 database if it doesn't exist
+DB_OUTPUT=$(wrangler d1 create DORAEMON_DB 2>&1 || true)
+
+if echo "$DB_OUTPUT" | grep -q "already exists"; then
+    print_warning "Database 'DORAEMON_DB' already exists"
+else
+    print_success "Database 'DORAEMON_DB' created"
+    echo "$DB_OUTPUT"
+    print_warning "Please update wrangler.jsonc with the database_id from the output above"
+fi
+
+print_step "Applying database migrations..."
+wrangler d1 migrations apply DORAEMON_DB --local
+
+if [ -f "seed.sql" ]; then
+    print_step "Seeding database with sample data..."
+    wrangler d1 execute DORAEMON_DB --local --file=./seed.sql
     print_success "Database seeded with sample data"
 fi
+
 
 print_step "Creating KV namespace..."
 KV_OUTPUT=$(wrangler kv:namespace create doraemon_KV 2>&1 || true)
