@@ -9,6 +9,6 @@
   "d1_databases": [
   {
     "binding": "DORAEMON_DB",
-    "database_id": "${{ env.DORAEMON_DB_ID }}"
+    "database_id": "05e88bd6-de91-46ac-ba53-c76d31df0f8a"
   }
 ]
