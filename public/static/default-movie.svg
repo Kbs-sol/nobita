@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" class="w-full h-full">
+  <defs>
+    <linearGradient id="doraemonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E40AF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#60A5FA;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="filmGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D97706;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#doraemonGradient)"/>
+  
+  <!-- Film strip border -->
+  <rect x="0" y="0" width="400" height="30" fill="url(#filmGradient)"/>
+  <rect x="0" y="270" width="400" height="30" fill="url(#filmGradient)"/>
+  
+  <!-- Film holes -->
+  <circle cx="25" cy="15" r="8" fill="#1E40AF"/>
+  <circle cx="75" cy="15" r="8" fill="#1E40AF"/>
+  <circle cx="125" cy="15" r="8" fill="#1E40AF"/>
+  <circle cx="175" cy="15" r="8" fill="#1E40AF"/>
+  <circle cx="225" cy="15" r="8" fill="#1E40AF"/>
+  <circle cx="275" cy="15" r="8" fill="#1E40AF"/>
+  <circle cx="325" cy="15" r="8" fill="#1E40AF"/>
+  <circle cx="375" cy="15" r="8" fill="#1E40AF"/>
+  
+  <circle cx="25" cy="285" r="8" fill="#1E40AF"/>
+  <circle cx="75" cy="285" r="8" fill="#1E40AF"/>
+  <circle cx="125" cy="285" r="8" fill="#1E40AF"/>
+  <circle cx="175" cy="285" r="8" fill="#1E40AF"/>
+  <circle cx="225" cy="285" r="8" fill="#1E40AF"/>
+  <circle cx="275" cy="285" r="8" fill="#1E40AF"/>
+  <circle cx="325" cy="285" r="8" fill="#1E40AF"/>
+  <circle cx="375" cy="285" r="8" fill="#1E40AF"/>
+  
+  <!-- Doraemon silhouette -->
+  <g transform="translate(200,150)">
+    <!-- Body -->
+    <ellipse cx="0" cy="0" rx="60" ry="50" fill="rgba(255,255,255,0.9)"/>
+    <!-- Head -->
+    <circle cx="0" cy="-60" r="45" fill="rgba(255,255,255,0.9)"/>
+    <!-- Eyes -->
+    <circle cx="-15" cy="-70" r="8" fill="#000"/>
+    <circle cx="15" cy="-70" r="8" fill="#000"/>
+    <!-- Nose -->
+    <circle cx="0" cy="-55" r="4" fill="#DC2626"/>
+    <!-- Mouth -->
+    <path d="M -20,-45 Q 0,-35 20,-45" stroke="#000" stroke-width="3" fill="none"/>
+    <!-- Whiskers -->
+    <line x1="-40" y1="-60" x2="-25" y2="-58" stroke="#000" stroke-width="2"/>
+    <line x1="-40" y1="-50" x2="-25" y2="-52" stroke="#000" stroke-width="2"/>
+    <line x1="25" y1="-58" x2="40" y2="-60" stroke="#000" stroke-width="2"/>
+    <line x1="25" y1="-52" x2="40" y2="-50" stroke="#000" stroke-width="2"/>
+    <!-- Bell -->
+    <circle cx="0" cy="10" r="8" fill="#F59E0B"/>
+  </g>
+  
+  <!-- Play button -->
+  <g transform="translate(200,150)">
+    <circle cx="0" cy="40" r="25" fill="rgba(255,255,255,0.8)" stroke="#1E40AF" stroke-width="3"/>
+    <polygon points="-8,30 -8,50 12,40" fill="#1E40AF"/>
+  </g>
+  
+  <!-- Title area -->
+  <rect x="50" y="230" width="300" height="40" fill="rgba(0,0,0,0.7)" rx="5"/>
+  <text x="200" y="252" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="bold">Doraemon Movie</text>
+</svg>

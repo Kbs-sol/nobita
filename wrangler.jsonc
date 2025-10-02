@@ -1,16 +1,16 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "doraemon-stream",
-  "compatibility_date": "2025-09-29",
+  "name": "doraemon-stream-2",
+  "compatibility_date": "2024-01-01",
   "pages_build_output_dir": "./dist",
   "compatibility_flags": [
     "nodejs_compat"
   ],
   "d1_databases": [
     {
-      "binding": "DORAEMON_DB",
-      "database_name": "doraemon-production",
-      "database_id": "05e88bd6-de91-46ac-ba53-c76d31df0f8a"
+      "binding": "DB",
+      "database_name": "doraemon-stream-2-production",
+      "database_id": "703abe46-d144-4f0a-8006-002024a3ca5f"
     }
   ]
 }

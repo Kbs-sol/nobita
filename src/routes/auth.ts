@@ -16,6 +16,10 @@ auth.post('/api/admin/login', async (c) => {
       return c.json({ success: false, message: 'Username and password required' }, 400);
     }
 
+    if (!c.env.DB) {
+      return c.json({ success: false, message: 'Database not available' }, 500);
+    }
+
     const db = new DatabaseService(c.env.DB);
     const user = await db.getAdminByUsername(username);
 
@@ -32,7 +36,7 @@ auth.post('/api/admin/login', async (c) => {
     await db.updateAdminLastLogin(user.id);
 
     // Generate JWT token
-    const token = await generateToken(user, c.env.JWT_SECRET);
+    const token = await generateToken(user, c.env.JWT_SECRET || 'default_jwt_secret');
 
     const response: LoginResponse = {
       success: true,
@@ -61,10 +65,14 @@ auth.post('/api/admin/verify', async (c) => {
       return c.json({ success: false, message: 'Token required' }, 401);
     }
 
-    const payload = await verifyToken(token, c.env.JWT_SECRET);
+    const payload = await verifyToken(token, c.env.JWT_SECRET || 'default_jwt_secret');
     
     if (!payload) {
       return c.json({ success: false, message: 'Invalid token' }, 401);
+    }
+
+    if (!c.env.DB) {
+      return c.json({ success: false, message: 'Database not available' }, 500);
     }
 
     const db = new DatabaseService(c.env.DB);

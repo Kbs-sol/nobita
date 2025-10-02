@@ -487,10 +487,364 @@ function renderCronPage() {
     `;
 }
 
-// Modal functions would continue here...
+// Modal and interaction functions
+function showAddMovieModal() {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900">Add New Movie</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <form id="addMovieForm" class="p-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                        <input type="text" name="title" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                        <input type="number" name="year" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea name="description" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Genre</label>
+                        <input type="text" name="genre" placeholder="Adventure, Comedy" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration (minutes)</label>
+                        <input type="number" name="duration_minutes" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Rating (1-10)</label>
+                        <input type="number" name="rating" min="1" max="10" step="0.1" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Thumbnail URL</label>
+                        <input type="url" name="thumbnail_url" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Telegram File ID</label>
+                    <input type="text" name="telegram_file_id" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                </div>
+                
+                <div class="flex items-center space-x-4 pt-4">
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Add Movie
+                    </button>
+                    <button type="button" onclick="closeModal()" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Handle form submission
+    document.getElementById('addMovieForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const movieData = Object.fromEntries(formData);
+        
+        try {
+            showToast('Adding movie...', 'info');
+            const response = await axios.post('/api/admin/movies', movieData);
+            
+            if (response.data.success) {
+                showToast('Movie added successfully!', 'success');
+                closeModal();
+                await loadMovies();
+                renderMoviesTable();
+            } else {
+                showToast(response.data.message || 'Failed to add movie', 'error');
+            }
+        } catch (error) {
+            console.error('Add movie error:', error);
+            showToast('Failed to add movie', 'error');
+        }
+    });
+}
+
+function showAddUserModal() {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg max-w-md w-full">
+            <div class="p-6 border-b">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900">Add Admin User</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <form id="addUserForm" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Username *</label>
+                    <input type="text" name="username" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+                    <input type="password" name="password" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                    <select name="role" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        <option value="admin">Admin</option>
+                        ${AdminApp.currentUser.role === 'superadmin' ? '<option value="superadmin">Superadmin</option>' : ''}
+                    </select>
+                </div>
+                
+                <div class="flex items-center space-x-4 pt-4">
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-user-plus mr-2"></i>Add User
+                    </button>
+                    <button type="button" onclick="closeModal()" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Handle form submission
+    document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const userData = Object.fromEntries(formData);
+        
+        try {
+            showToast('Adding user...', 'info');
+            const response = await axios.post('/api/admin/users', userData);
+            
+            if (response.data.success) {
+                showToast('User added successfully!', 'success');
+                closeModal();
+                await loadUsers();
+            } else {
+                showToast(response.data.message || 'Failed to add user', 'error');
+            }
+        } catch (error) {
+            console.error('Add user error:', error);
+            showToast('Failed to add user', 'error');
+        }
+    });
+}
+
+function closeModal() {
+    const modals = document.querySelectorAll('.fixed.inset-0.bg-black');
+    modals.forEach(modal => modal.remove());
+}
+
+async function editMovie(movieId) {
+    try {
+        // Find the movie in our cached data
+        const movie = AdminApp.movies.find(m => m.id === movieId);
+        if (!movie) {
+            showToast('Movie not found', 'error');
+            return;
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        modal.innerHTML = `
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+                <div class="p-6 border-b">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Edit Movie: ${movie.title}</h3>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <form id="editMovieForm" class="p-6 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                            <input type="text" name="title" value="${movie.title}" required class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                            <input type="number" name="year" value="${movie.year || ''}" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea name="description" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2">${movie.description || ''}</textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Genre</label>
+                            <input type="text" name="genre" value="${movie.genre || ''}" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Duration (minutes)</label>
+                            <input type="number" name="duration_minutes" value="${movie.duration_minutes || ''}" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Rating (1-10)</label>
+                            <input type="number" name="rating" value="${movie.rating || ''}" min="1" max="10" step="0.1" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Thumbnail URL</label>
+                            <input type="url" name="thumbnail_url" value="${movie.thumbnail_url || ''}" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Telegram File ID</label>
+                        <input type="text" name="telegram_file_id" value="${movie.telegram_file_id || ''}" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    </div>
+                    
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="is_active" ${movie.is_active ? 'checked' : ''} class="mr-2">
+                            <span class="text-sm font-medium text-gray-700">Active</span>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4 pt-4">
+                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-save mr-2"></i>Update Movie
+                        </button>
+                        <button type="button" onclick="closeModal()" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Handle form submission
+        document.getElementById('editMovieForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const movieData = Object.fromEntries(formData);
+            movieData.is_active = formData.has('is_active') ? 1 : 0;
+            
+            try {
+                showToast('Updating movie...', 'info');
+                const response = await axios.put(`/api/admin/movies/${movieId}`, movieData);
+                
+                if (response.data.success) {
+                    showToast('Movie updated successfully!', 'success');
+                    closeModal();
+                    await loadMovies();
+                    renderMoviesTable();
+                } else {
+                    showToast(response.data.message || 'Failed to update movie', 'error');
+                }
+            } catch (error) {
+                console.error('Update movie error:', error);
+                showToast('Failed to update movie', 'error');
+            }
+        });
+    } catch (error) {
+        console.error('Edit movie error:', error);
+        showToast('Failed to open edit form', 'error');
+    }
+}
+
+async function deleteMovie(movieId) {
+    if (confirm('Are you sure you want to delete this movie? This action cannot be undone.')) {
+        try {
+            showToast('Deleting movie...', 'info');
+            const response = await axios.delete(`/api/admin/movies/${movieId}`);
+            
+            if (response.data.success) {
+                showToast('Movie deleted successfully!', 'success');
+                await loadMovies();
+                renderMoviesTable();
+            } else {
+                showToast(response.data.message || 'Failed to delete movie', 'error');
+            }
+        } catch (error) {
+            console.error('Delete movie error:', error);
+            showToast('Failed to delete movie', 'error');
+        }
+    }
+}
+
+async function toggleMovieStatus(movieId) {
+    try {
+        const movie = AdminApp.movies.find(m => m.id === movieId);
+        if (!movie) return;
+
+        const newStatus = movie.is_active ? 0 : 1;
+        showToast(`${newStatus ? 'Activating' : 'Deactivating'} movie...`, 'info');
+        
+        const response = await axios.put(`/api/admin/movies/${movieId}`, { is_active: newStatus });
+        
+        if (response.data.success) {
+            showToast(`Movie ${newStatus ? 'activated' : 'deactivated'} successfully!`, 'success');
+            await loadMovies();
+            renderMoviesTable();
+        } else {
+            showToast(response.data.message || 'Failed to update movie status', 'error');
+        }
+    } catch (error) {
+        console.error('Toggle movie status error:', error);
+        showToast('Failed to update movie status', 'error');
+    }
+}
+
+async function validateTelegramFile(movieId) {
+    try {
+        const movie = AdminApp.movies.find(m => m.id === movieId);
+        if (!movie || !movie.telegram_file_id) {
+            showToast('No Telegram file ID found for this movie', 'warning');
+            return;
+        }
+
+        showToast('Validating Telegram file...', 'info');
+        const response = await axios.post('/api/admin/validate-telegram', {
+            file_id: movie.telegram_file_id
+        });
+        
+        if (response.data.success && response.data.valid) {
+            showToast('Telegram file is valid!', 'success');
+        } else {
+            showToast(`Telegram file validation failed: ${response.data.error}`, 'error');
+        }
+    } catch (error) {
+        console.error('Validate Telegram file error:', error);
+        showToast('Failed to validate Telegram file', 'error');
+    }
+}
+
 async function generateBlog(movieId) {
     try {
-        showToast('Generating blog...', 'info');
+        showToast('Generating AI blog...', 'info');
         const response = await axios.post(`/api/admin/movies/${movieId}/generate-blog`);
         
         if (response.data.success) {
@@ -502,6 +856,51 @@ async function generateBlog(movieId) {
         console.error('Generate blog error:', error);
         showToast('Failed to generate blog', 'error');
     }
+}
+
+async function loadUsers() {
+    try {
+        const response = await axios.get('/api/admin/users');
+        if (response.data.success) {
+            AdminApp.users = response.data.users;
+            renderUsersTable();
+        }
+    } catch (error) {
+        console.error('Load users error:', error);
+        showToast('Failed to load users', 'error');
+    }
+}
+
+function renderUsersTable() {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody || !AdminApp.users) return;
+
+    tbody.innerHTML = AdminApp.users.map(user => `
+        <tr class="border-b hover:bg-gray-50">
+            <td class="py-4 px-4 font-medium text-gray-900">${user.username}</td>
+            <td class="py-4 px-4">
+                <span class="px-2 py-1 text-xs rounded-full ${user.role === 'superadmin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">
+                    ${user.role}
+                </span>
+            </td>
+            <td class="py-4 px-4 text-gray-500">${new Date(user.created_at).toLocaleDateString()}</td>
+            <td class="py-4 px-4 text-gray-500">${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</td>
+            <td class="py-4 px-4">
+                <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Active</span>
+            </td>
+            <td class="py-4 px-4">
+                <div class="flex items-center space-x-2">
+                    ${AdminApp.currentUser.role === 'superadmin' && user.username !== 'superadmin' ? `
+                    <button onclick="deleteUser('${user.username}')" 
+                            class="text-red-600 hover:text-red-700 p-2" 
+                            title="Delete User">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    ` : ''}
+                </div>
+            </td>
+        </tr>
+    `).join('');
 }
 
 async function runCronJob(jobName) {

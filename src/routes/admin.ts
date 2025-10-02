@@ -415,4 +415,107 @@ admin.post('/api/admin/cron/:job', async (c) => {
   }
 });
 
+// Get all admin users (superadmin only)
+admin.get('/api/admin/users', async (c) => {
+  try {
+    const currentUser = c.get('user');
+    if (!isSuperAdmin(currentUser)) {
+      return c.json({ success: false, message: 'Superadmin access required' }, 403);
+    }
+
+    const db = new DatabaseService(c.env.DB);
+    const users = await db.getAllAdminUsers();
+
+    return c.json({
+      success: true,
+      users: users
+    });
+
+  } catch (error) {
+    console.error('Get users error:', error);
+    return c.json({ success: false, message: 'Failed to fetch users' }, 500);
+  }
+});
+
+// Create new admin user (superadmin only)
+admin.post('/api/admin/users', async (c) => {
+  try {
+    const currentUser = c.get('user');
+    if (!isSuperAdmin(currentUser)) {
+      return c.json({ success: false, message: 'Superadmin access required' }, 403);
+    }
+
+    const body = await c.req.json();
+    const { username, password, role } = body;
+
+    if (!username || !password) {
+      return c.json({ success: false, message: 'Username and password are required' }, 400);
+    }
+
+    const db = new DatabaseService(c.env.DB);
+    
+    // Check if user already exists
+    const existingUser = await db.getAdminByUsername(username);
+    if (existingUser) {
+      return c.json({ success: false, message: 'Username already exists' }, 400);
+    }
+
+    // Create new admin user
+    const newUser = await db.createAdminUser({
+      username,
+      password,
+      role: role || 'admin',
+      created_by: currentUser.id
+    });
+
+    return c.json({
+      success: true,
+      user: {
+        id: newUser.id,
+        username: newUser.username,
+        role: newUser.role,
+        created_at: newUser.created_at
+      },
+      message: 'User created successfully'
+    });
+
+  } catch (error) {
+    console.error('Create user error:', error);
+    return c.json({ success: false, message: 'Failed to create user' }, 500);
+  }
+});
+
+// Delete admin user (superadmin only)
+admin.delete('/api/admin/users/:username', async (c) => {
+  try {
+    const currentUser = c.get('user');
+    if (!isSuperAdmin(currentUser)) {
+      return c.json({ success: false, message: 'Superadmin access required' }, 403);
+    }
+
+    const username = c.req.param('username');
+    
+    // Prevent deleting superadmin
+    if (username === 'superadmin') {
+      return c.json({ success: false, message: 'Cannot delete superadmin user' }, 400);
+    }
+
+    const db = new DatabaseService(c.env.DB);
+    const deleted = await db.deleteAdminUser(username);
+
+    if (!deleted) {
+      return c.json({ success: false, message: 'User not found' }, 404);
+    }
+
+    return c.json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete user error:', error);
+    return c.json({ success: false, message: 'Failed to delete user' }, 500);
+  }
+});
+
 export default admin;

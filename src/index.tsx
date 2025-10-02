@@ -84,25 +84,35 @@ app.use('/api/*', async (c, next) => {
   await next();
 });
 
-// Authentication middleware for admin routes
+// Authentication middleware for admin routes (exclude login and verify routes)
 app.use('/api/admin/*', async (c, next) => {
+  const path = new URL(c.req.url).pathname;
+  
+  // Skip authentication for login and verify routes
+  if (path === '/api/admin/login' || path === '/api/admin/verify') {
+    await next();
+    return;
+  }
+  
   const token = c.req.header('Authorization')?.replace('Bearer ', '');
   if (!token) {
     return c.json({ error: 'Authorization token required' }, 401);
   }
 
-  const payload = await verifyToken(token, c.env.JWT_SECRET);
+  const payload = await verifyToken(token, c.env.JWT_SECRET || 'default_jwt_secret');
   if (!payload) {
     return c.json({ error: 'Invalid or expired token' }, 401);
   }
 
-  const db = new DatabaseService(c.env.DB);
-  const user = await db.getAdminByUsername(payload.username);
-  if (!user || !user.is_active) {
-    return c.json({ error: 'User not found or inactive' }, 401);
+  if (c.env.DB) {
+    const db = new DatabaseService(c.env.DB);
+    const user = await db.getAdminByUsername(payload.username);
+    if (!user || !user.is_active) {
+      return c.json({ error: 'User not found or inactive' }, 401);
+    }
+    c.set('user', user);
   }
-
-  c.set('user', user);
+  
   await next();
 });
 
@@ -193,6 +203,9 @@ app.get('/', async (c) => {
           gtag('config', '${c.env.GOOGLE_ANALYTICS_ID}');
         </script>
         ` : ''}
+        ${c.env.ADSENSE_CLIENT_ID ? `
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${c.env.ADSENSE_CLIENT_ID}" crossorigin="anonymous"></script>
+        ` : ''}
     </head>
     <body class="bg-gradient-to-br from-blue-50 to-yellow-50 min-h-screen">
         <!-- Header -->
@@ -229,6 +242,38 @@ app.get('/', async (c) => {
                     Watch, download, and enjoy AI-generated blog content about your favorite adventures!
                 </p>
             </section>
+
+            <!-- Advertisement Banner -->
+            ${c.env.ADSENSE_CLIENT_ID ? `
+            <section class="mb-12">
+                <div class="text-center">
+                    <p class="text-sm text-gray-500 mb-2">Advertisement</p>
+                    <div class="mx-auto">
+                        <ins class="adsbygoogle"
+                             style="display:block"
+                             data-ad-client="${c.env.ADSENSE_CLIENT_ID}"
+                             data-ad-slot="${c.env.ADSENSE_SLOT_ID || '1234567890'}"
+                             data-ad-format="auto"
+                             data-full-width-responsive="true"></ins>
+                        <script>
+                             (adsbygoogle = window.adsbygoogle || []).push({});
+                        </script>
+                    </div>
+                </div>
+            </section>
+            ` : `
+            <!-- Demo Ad Placeholder -->
+            <section class="mb-12">
+                <div class="text-center">
+                    <div class="bg-gradient-to-r from-blue-500 to-yellow-500 text-white py-8 px-4 rounded-lg mx-auto max-w-4xl">
+                        <i class="fas fa-ad text-4xl mb-4"></i>
+                        <h3 class="text-2xl font-bold mb-2">Advertisement Space</h3>
+                        <p class="text-lg opacity-90">This is where Google AdSense ads would appear</p>
+                        <p class="text-sm opacity-80 mt-2">Configure ADSENSE_CLIENT_ID to enable real ads</p>
+                    </div>
+                </div>
+            </section>
+            `}
 
             <!-- Movies Grid -->
             <section>

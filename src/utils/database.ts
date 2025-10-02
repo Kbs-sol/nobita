@@ -290,4 +290,83 @@ export class DatabaseService {
       'DELETE FROM user_sessions WHERE expires_at <= CURRENT_TIMESTAMP'
     ).run();
   }
+
+  // Get all blogs
+  async getAllBlogs(): Promise<any[]> {
+    const result = await this.db.prepare(`
+      SELECT * FROM movie_blogs ORDER BY created_at DESC
+    `).all();
+    
+    return result as any[];
+  }
+
+  // Get all blogs with movie information
+  async getAllBlogsWithMovies(): Promise<any[]> {
+    const result = await this.db.prepare(`
+      SELECT 
+        b.id,
+        b.title,
+        b.summary,
+        b.keywords,
+        b.view_count,
+        b.created_at,
+        m.id as movie_id,
+        m.title as movie_title,
+        m.year as movie_year,
+        m.thumbnail_url
+      FROM movie_blogs b
+      JOIN movies m ON b.movie_id = m.id
+      WHERE m.is_active = 1
+      ORDER BY b.created_at DESC
+    `).all();
+    
+    return result as any[];
+  }
+
+
+
+  // Admin user management
+  async getAllAdminUsers(): Promise<any[]> {
+    const result = await this.db.prepare(`
+      SELECT 
+        id, username, role, created_at, last_login 
+      FROM admin_roles 
+      ORDER BY created_at DESC
+    `).all();
+    
+    return result as any[];
+  }
+
+  async createAdminUser(userData: {
+    username: string;
+    password: string;
+    role: string;
+    created_by: number;
+  }): Promise<any> {
+    const { hashPassword } = await import('./auth');
+    const passwordHash = await hashPassword(userData.password);
+    
+    const result = await this.db.prepare(`
+      INSERT INTO admin_roles (username, password_hash, role, created_by)
+      VALUES (?, ?, ?, ?)
+    `).bind(
+      userData.username,
+      passwordHash,
+      userData.role,
+      userData.created_by
+    ).run();
+
+    if (result.success) {
+      return await this.getAdminById(Number(result.meta.last_row_id));
+    }
+    throw new Error('Failed to create admin user');
+  }
+
+  async deleteAdminUser(username: string): Promise<boolean> {
+    const result = await this.db.prepare(`
+      DELETE FROM admin_roles WHERE username = ?
+    `).bind(username).run();
+
+    return result.changes > 0;
+  }
 }
