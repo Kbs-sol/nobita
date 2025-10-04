@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS movies (
   view_count INTEGER DEFAULT 0,
   download_count INTEGER DEFAULT 0,
   is_active INTEGER DEFAULT 1,
+  release_date DATE,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by INTEGER REFERENCES admin_roles(id)
@@ -132,3 +133,16 @@ CREATE INDEX IF NOT EXISTS idx_ad_interactions_movie_id ON ad_interactions(movie
 
 CREATE INDEX IF NOT EXISTS idx_cache_entries_key ON cache_entries(cache_key);
 CREATE INDEX IF NOT EXISTS idx_cache_entries_expires ON cache_entries(expires_at);
+
+-- Insert default superadmin user
+-- Password: admin123 (hashed with SHA-256 + salt)
+-- In production, change the password immediately!
+INSERT OR REPLACE INTO admin_roles (id, username, password_hash, role, created_at, is_active)
+VALUES (
+  1, 
+  'superadmin',
+  '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', -- SHA-256 of 'admin123' (change this!)
+  'superadmin',
+  CURRENT_TIMESTAMP,
+  1
+);
